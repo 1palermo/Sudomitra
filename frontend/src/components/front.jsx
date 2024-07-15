@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import Tesseract from 'tesseract.js';
+import axios from 'axios';
 
 const SudokuSolver = () => {
     const [image, setImage] = useState(null);
     const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill(0))); // Example empty board
     const [solved, setSolved] = useState(false);
+    const [ocrText, setOcrText] = useState('');
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
@@ -20,78 +22,79 @@ const SudokuSolver = () => {
                 logger: (m) => console.log(m),
             }
         ).then(({ data: { text } }) => {
-            const extractedBoard = parseSudokuText(text);
-            setBoard(extractedBoard);
+            console.log(text); // Output OCR text for debugging
+            setOcrText(text); // Set OCR text to state for later use
         });
     };
 
-    const parseSudokuText = (text) => {
-        const rows = text.trim().split('\n');
-        const board = Array(9).fill().map(() => Array(9).fill(0));
-
-        rows.forEach((row, i) => {
-            const digits = row.replace(/[^0-9]/g, '');
-            digits.split('').forEach((digit, j) => {
-                board[i][j] = parseInt(digit, 10);
-            });
-        });
-
-        return board;
-    };
-
-    const isValid = (board, row, col, num) => {
-        for (let x = 0; x < 9; x++) {
-            if (board[row][x] === num || board[x][col] === num || 
-                board[Math.floor(row / 3) * 3 + Math.floor(x / 3)][Math.floor(col / 3) * 3 + x % 3] === num) {
-                return false;
+    const solveSudoku = async () => {
+        try {
+            if (!ocrText) {
+                alert('OCR text is empty. Please upload an image and try again.');
+                return;
             }
+
+            const response = await sendToOpenAI(ocrText);
+
+            const solvedSudoku = response.data.choices[0].text.trim();
+
+            if (isValidSudoku(solvedSudoku)) {
+                updateBoard(solvedSudoku);
+                setSolved(true);
+            } else {
+                console.error('Invalid Sudoku solution');
+                alert('Failed to solve Sudoku puzzle.');
+            }
+        } catch (error) {
+            console.error('Error solving Sudoku:', error);
+            alert('Failed to solve Sudoku puzzle.');
         }
-        return true;
     };
 
-    const solveSudokuUtil = (board) => {
-        for (let row = 0; row < 9; row++) {
-            for (let col = 0; col < 9; col++) {
-                if (board[row][col] === 0) {
-                    for (let num = 1; num <= 9; num++) {
-                        if (isValid(board, row, col, num)) {
-                            board[row][col] = num;
-                            if (solveSudokuUtil(board)) {
-                                return true;
-                            } else {
-                                board[row][col] = 0;
-                            }
-                        }
-                    }
-                    return false;
+    const sendToOpenAI = (ocrText) => {
+        const apiKey = 'sK82300112488957'; 
+
+        return axios.post(
+            'https://api.ocr.space/parse/image',
+            {
+                prompt: ocrText,
+                max_tokens: 150
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
                 }
             }
-        }
-        return true;
+        );
     };
 
-    const solveSudoku = () => {
-        let newBoard = JSON.parse(JSON.stringify(board)); // Deep copy the board
-        if (solveSudokuUtil(newBoard)) {
-            setBoard(newBoard);
-            setSolved(true);
-        } else {
-            alert("No solution exists for the given Sudoku puzzle.");
+    const isValidSudoku = (sudokuString) => {
+        // Validate if the solved Sudoku string is a valid 81-character string
+        return sudokuString.length === 81 && sudokuString.match(/^[1-9\.]+$/);
+    };
+
+    const updateBoard = (solvedSudoku) => {
+        // Convert the solved Sudoku string into a 2D array (9x9 board)
+        const newBoard = [];
+        for (let i = 0; i < 9; i++) {
+            newBoard.push(solvedSudoku.substring(i * 9, (i + 1) * 9).split('').map(Number));
         }
+        setBoard(newBoard);
     };
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
             <h1 className="text-4xl font-bold mb-6 text-gray-800">Sudomitra</h1>
             <p className="text-lg text-gray-600 mb-8 text-center max-w-md">
-                Upload an image of a Sudoku puzzle, and our solver will automatically solve it for you. 
+                Upload an image of a Sudoku puzzle, and our solver will automatically solve it for you.
                 Leverage the power of advanced algorithms to crack even the most challenging puzzles!
             </p>
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleImageUpload} 
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                 />
                 {image && (
@@ -99,9 +102,9 @@ const SudokuSolver = () => {
                         <img src={image} alt="Sudoku Puzzle" className="w-full h-auto rounded-lg" />
                     </div>
                 )}
-                <button 
-                    onClick={solveSudoku} 
+                <button
                     className="mt-6 w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300"
+                    onClick={solveSudoku}
                 >
                     Solve Sudoku
                 </button>
@@ -109,26 +112,27 @@ const SudokuSolver = () => {
                     <div className="mt-4">
                         <h2 className="text-2xl font-semibold mb-4">Solved Sudoku</h2>
                         <div className="grid grid-cols-9 gap-1">
-                            {board.flat().map((num, idx) => (
-                                <div key={idx} className="w-8 h-8 flex items-center justify-center border border-gray-300">
-                                    {num}
-                                </div>
+                            {board.map((row, rowIndex) => (
+                                row.map((cell, colIndex) => (
+                                    <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
+                                        {cell || '.'}
+                                    </div>
+                                ))
                             ))}
                         </div>
                     </div>
                 )}
             </div>
             <div className="mt-12 text-gray-700 mx-auto px-24">
-                <h2 className="text-2xl font-semibold mb-4">About Sudoku Solver</h2>
+                <h2 className="text-2xl font-semibold mb-4">About Sudomitra</h2>
                 <p className="text-base mb-2">
-                    Sudoku is a popular puzzle that requires logical thinking and patience. Our Sudoku Solver app
-                    makes it easy to solve any Sudoku puzzle by simply uploading an image. Whether you're stuck on a
-                    tricky puzzle or just want to check your solution, our app is here to help!
+                    Sudomitra is a powerful tool for solving Sudoku puzzles. Simply upload an image of the puzzle,
+                    and it will be automatically solved using advanced algorithms. Whether you're stuck on a challenging
+                    puzzle or just want to verify your solution, Sudomitra is here to assist you!
                 </p>
                 <p className="text-base">
-                    Powered by advanced image processing and algorithmic techniques, the Sudoku Solver app is designed
-                    to handle a wide range of Sudoku puzzles with accuracy and speed. Try it out and never get stuck
-                    on a Sudoku puzzle again!
+                    Powered by cutting-edge image processing and AI techniques, Sudomitra ensures accurate and speedy
+                    solutions to a wide range of Sudoku puzzles. Try it out today and never struggle with Sudoku again!
                 </p>
             </div>
         </div>
