@@ -8,18 +8,21 @@ const SudokuSolver = () => {
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = () => {
-            setImage(reader.result);
-            console.log("Base64 Image Data: ", reader.result);  // Debugging log
-            processImage(reader.result);
-        };
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        setImage(URL.createObjectURL(file));
+        console.log("Selected Image: ", file);  // Debugging log
+        processImage(formData);
     };
 
-    const processImage = async (imageData) => {
+    const processImage = async (formData) => {
         try {
-            const response = await axios.post('http://localhost:5000/ocr', { image: imageData });
+            const response = await axios.post('http://localhost:5000/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             console.log("OCR Response: ", response.data);  // Debugging log
             setBoard(response.data);
             setSolved(true);
