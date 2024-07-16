@@ -3,7 +3,8 @@ import axios from 'axios';
 
 const SudokuSolver = () => {
     const [image, setImage] = useState(null);
-    const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
+    const [inputBoard, setInputBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
+    const [solvedBoard, setSolvedBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solved, setSolved] = useState(false);
 
     const handleImageUpload = (event) => {
@@ -24,7 +25,8 @@ const SudokuSolver = () => {
                 }
             });
             console.log("OCR Response: ", response.data);  // Debugging log
-            setBoard(response.data);
+            setInputBoard(response.data.input_grid);
+            setSolvedBoard(response.data.solved_grid);
             setSolved(true);
         } catch (error) {
             console.error('Error processing image:', error);
@@ -53,12 +55,22 @@ const SudokuSolver = () => {
                 )}
                 {solved && (
                     <div className="mt-4">
-                        <h2 className="text-2xl font-semibold mb-4">Solved Sudoku</h2>
-                        <div className="grid grid-cols-9 gap-1">
-                            {board.map((row, rowIndex) => (
+                        <h2 className="text-2xl font-semibold mb-4">Input Sudoku</h2>
+                        <div className="grid grid-cols-9 gap-1 mb-4">
+                            {inputBoard.map((row, rowIndex) => (
                                 row.map((cell, colIndex) => (
                                     <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
                                         {cell || '.'}
+                                    </div>
+                                ))
+                            ))}
+                        </div>
+                        <h2 className="text-2xl font-semibold mb-4">Solved Sudoku</h2>
+                        <div className="grid grid-cols-9 gap-1">
+                            {solvedBoard.map((row, rowIndex) => (
+                                row.map((cell, colIndex) => (
+                                    <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
+                                        {cell}
                                     </div>
                                 ))
                             ))}
