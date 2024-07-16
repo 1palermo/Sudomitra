@@ -1,86 +1,32 @@
 import React, { useState } from 'react';
-import Tesseract from 'tesseract.js';
 import axios from 'axios';
 
 const SudokuSolver = () => {
     const [image, setImage] = useState(null);
-    const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill(0))); // Example empty board
+    const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solved, setSolved] = useState(false);
-    const [ocrText, setOcrText] = useState('');
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
-        setImage(URL.createObjectURL(file));
-        processImage(file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = () => {
+            setImage(reader.result);
+            console.log("Base64 Image Data: ", reader.result);  // Debugging log
+            processImage(reader.result);
+        };
     };
 
-    const processImage = (file) => {
-        Tesseract.recognize(
-            file,
-            'eng',
-            {
-                logger: (m) => console.log(m),
-            }
-        ).then(({ data: { text } }) => {
-            console.log(text); // Output OCR text for debugging
-            setOcrText(text); // Set OCR text to state for later use
-        });
-    };
-
-    const solveSudoku = async () => {
+    const processImage = async (imageData) => {
         try {
-            if (!ocrText) {
-                alert('OCR text is empty. Please upload an image and try again.');
-                return;
-            }
-
-            const response = await sendToOpenAI(ocrText);
-
-            const solvedSudoku = response.data.choices[0].text.trim();
-
-            if (isValidSudoku(solvedSudoku)) {
-                updateBoard(solvedSudoku);
-                setSolved(true);
-            } else {
-                console.error('Invalid Sudoku solution');
-                alert('Failed to solve Sudoku puzzle.');
-            }
+            const response = await axios.post('http://localhost:5000/ocr', { image: imageData });
+            console.log("OCR Response: ", response.data);  // Debugging log
+            setBoard(response.data);
+            setSolved(true);
         } catch (error) {
-            console.error('Error solving Sudoku:', error);
-            alert('Failed to solve Sudoku puzzle.');
+            console.error('Error processing image:', error);
+            alert('Failed to process image.');
         }
-    };
-
-    const sendToOpenAI = (ocrText) => {
-        const apiKey = 'sK82300112488957'; 
-
-        return axios.post(
-            'https://api.ocr.space/parse/image',
-            {
-                prompt: ocrText,
-                max_tokens: 150
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                }
-            }
-        );
-    };
-
-    const isValidSudoku = (sudokuString) => {
-        // Validate if the solved Sudoku string is a valid 81-character string
-        return sudokuString.length === 81 && sudokuString.match(/^[1-9\.]+$/);
-    };
-
-    const updateBoard = (solvedSudoku) => {
-        // Convert the solved Sudoku string into a 2D array (9x9 board)
-        const newBoard = [];
-        for (let i = 0; i < 9; i++) {
-            newBoard.push(solvedSudoku.substring(i * 9, (i + 1) * 9).split('').map(Number));
-        }
-        setBoard(newBoard);
     };
 
     return (
@@ -102,12 +48,6 @@ const SudokuSolver = () => {
                         <img src={image} alt="Sudoku Puzzle" className="w-full h-auto rounded-lg" />
                     </div>
                 )}
-                <button
-                    className="mt-6 w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300"
-                    onClick={solveSudoku}
-                >
-                    Solve Sudoku
-                </button>
                 {solved && (
                     <div className="mt-4">
                         <h2 className="text-2xl font-semibold mb-4">Solved Sudoku</h2>
