@@ -7,23 +7,17 @@ const MainContent = () => {
     const [inputBoard, setInputBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solvedBoard, setSolvedBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solved, setSolved] = useState(false);
-    const [loading, setLoading] = useState(false);
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        
         setImage(URL.createObjectURL(file));
+        processImage(formData);
     };
 
-    const processImage = async () => {
-        if (!image) {
-            alert('Please upload an image first.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('image', image);
-
-        setLoading(true);
+    const processImage = async (formData) => {
         try {
             const response = await axios.post('http://localhost:5000/upload', formData, {
                 headers: {
@@ -36,8 +30,6 @@ const MainContent = () => {
         } catch (error) {
             console.error('Error processing image:', error);
             alert('Failed to process image.');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -52,12 +44,6 @@ const MainContent = () => {
             {image && (
                 <div className="mt-4">
                     <img src={image} alt="Sudoku Puzzle" className="w-full h-auto rounded-lg" />
-                    <button
-                        onClick={processImage}
-                        className="mt-4 w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600"
-                    >
-                        {loading ? 'Processing...' : 'Get Result'}
-                    </button>
                 </div>
             )}
             {solved && (
