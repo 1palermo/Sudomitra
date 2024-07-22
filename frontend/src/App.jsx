@@ -1,71 +1,47 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import MainContent from './components/MainContent'
-import Header from './components/Header'
-import Footer from './components/Footer'
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from 'react';
+import Header from './components/Header';
+import MainContent from './components/MainContent';
+import Footer from './components/Footer';
+import SpiralCanvas from './components/LandingPage/Spiral';
+import backgroundImage from './assets/7971.jpg'; // Adjust the path as needed
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [showSpiral, setShowSpiral] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSpiral(false);
+    }, 3000); // 3 seconds
+
+    return () => clearTimeout(timer); // Cleanup the timer
+  }, []);
 
   return (
     <>
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
-            <Header />
-            <p className="text-lg text-gray-600 mb-8 text-center max-w-md">
-                Upload an image of a Sudoku puzzle, and our solver will automatically solve it for you.
-                Leverage the power of advanced algorithms to crack even the most challenging puzzles!
-            </p>
-            <MainContent />
-            <Footer />
-      </div>
-    </>
-  )
-}
-
-export default App
-
-
-
-
-/*// index.js
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-
-ReactDOM.render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>,
-    document.getElementById('root')
-);
-
-
-
-or mujhe abhi app component open karna hai 
-
-
-// App.js
-import React from 'react';
-import Header from './Header';
-import MainContent from './MainContent';
-import Footer from './Footer';
-
-const App = () => {
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
-            <Header />
-            <p className="text-lg text-gray-600 mb-8 text-center max-w-md">
-                Upload an image of a Sudoku puzzle, and our solver will automatically solve it for you.
-                Leverage the power of advanced algorithms to crack even the most challenging puzzles!
-            </p>
-            <MainContent />
-            <Footer />
+      {showSpiral ? (
+        <div
+          className="min-h-screen flex flex-col items-center justify-center py-10"
+          style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundRepeat: 'repeat' }}
+        >
+          <SpiralCanvas />
         </div>
-    );
+      ) : (
+        <div
+          className="min-h-screen flex flex-col items-center justify-center py-10"
+          style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundRepeat: 'repeat' }}
+        >
+          <Header />
+          <p className="text-lg text-gray-600 mb-8 text-center max-w-md">
+            Upload an image of a Sudoku puzzle, and our solver will automatically solve it for you.
+            Leverage the power of advanced algorithms to crack even the most challenging puzzles!
+          </p>
+          <MainContent />
+          <Footer />
+        </div>
+      )}
+    </>
+  );
 };
 
 export default App;
-*/

@@ -2,3 +2,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    background: url('./assets/7971.jpg') repeat;
+    background-size: cover;
+  }
