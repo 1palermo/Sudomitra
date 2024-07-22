@@ -1,6 +1,6 @@
 # Sudoku Solver
 
-This project aims to create a Sudoku solver that can take an image of an unsolved Sudoku puzzle and provide the solved solution. 
+This project aims to create a Sudoku solver that can take an image of an unsolved Sudoku puzzle and provide the solved solutions. 
 
 ## Table of Contents
 - [Introduction](#introduction)
