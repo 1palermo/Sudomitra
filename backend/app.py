@@ -4,6 +4,7 @@ import easyocr
 import numpy as np
 from PIL import Image
 import io
+from sudoku_solver import solve_sudoku  # Import the Sudoku solver
 
 app = Flask(__name__)
 CORS(app)
@@ -17,37 +18,6 @@ def decode_image(image_data):
         return np.array(image)
     except Exception as e:
         print(f"Error decoding image: {e}")
-        return None
-
-def solve_sudoku(board):
-    def is_valid(board, row, col, num):
-        for i in range(9):
-            if board[row][i] == num or board[i][col] == num:
-                return False
-        start_row, start_col = 3 * (row // 3), 3 * (col // 3)
-        for i in range(3):
-            for j in range(3):
-                if board[start_row + i][start_col + j] == num:
-                    return False
-        return True
-
-    def solve(board):
-        for row in range(9):
-            for col in range(9):
-                if board[row][col] == 0:
-                    for num in range(1, 10):
-                        if is_valid(board, row, col, num):
-                            board[row][col] = num
-                            if solve(board):
-                                return True
-                            board[row][col] = 0
-                    return False
-        return True
-
-    board_copy = [row[:] for row in board]
-    if solve(board_copy):
-        return board_copy
-    else:
         return None
 
 @app.route('/upload', methods=['POST'])
@@ -90,20 +60,36 @@ def upload_image():
         # Map the OCR results to the Sudoku grid
         map_results_to_grid(results)
 
-        # Solve the Sudoku puzzle
-        solved_sudoku_grid = solve_sudoku(sudoku_grid)
-
-        if solved_sudoku_grid is None:
-            return jsonify({"error": "Failed to solve Sudoku"}), 500
-
-        # Return the resulting Sudoku grid and the solved grid as JSON
+        # Return the resulting Sudoku grid as JSON
         return jsonify({
-            "input_grid": sudoku_grid,
-            "solved_grid": solved_sudoku_grid
+            "input_grid": sudoku_grid
         })
     except Exception as e:
         print(f"Error processing image: {e}")
         return jsonify({"error": "An error occurred while processing the image"}), 500
+
+@app.route('/solve', methods=['POST'])
+def solve_sudoku_endpoint():
+    try:
+        data = request.json
+        input_grid = data.get('input_grid')
+
+        if not input_grid or not isinstance(input_grid, list) or len(input_grid) != 9 or not all(len(row) == 9 for row in input_grid):
+            return jsonify({"error": "Invalid input grid"}), 400
+
+        # Solve the Sudoku puzzle
+        solved_sudoku_grid = solve_sudoku(input_grid)
+
+        if solved_sudoku_grid is None:
+            return jsonify({"error": "Failed to solve Sudoku"}), 500
+
+        # Return the solved grid as JSON
+        return jsonify({
+            "solved_grid": solved_sudoku_grid
+        })
+    except Exception as e:
+        print(f"Error solving Sudoku: {e}")
+        return jsonify({"error": "An error occurred while solving the Sudoku"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,4 +1,3 @@
-// MainContent.js
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -7,6 +6,7 @@ const MainContent = () => {
     const [inputBoard, setInputBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solvedBoard, setSolvedBoard] = useState(Array(9).fill().map(() => Array(9).fill(0)));
     const [solved, setSolved] = useState(false);
+    const [editing, setEditing] = useState(false);
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
@@ -25,11 +25,32 @@ const MainContent = () => {
                 }
             });
             setInputBoard(response.data.input_grid);
-            setSolvedBoard(response.data.solved_grid);
-            setSolved(true);
+            setSolved(false);
         } catch (error) {
             console.error('Error processing image:', error);
             alert('Failed to process image.');
+        }
+    };
+
+    const handleInputChange = (rowIndex, colIndex, value) => {
+        const newBoard = [...inputBoard];
+        newBoard[rowIndex][colIndex] = value ? parseInt(value) : 0;
+        setInputBoard(newBoard);
+    };
+
+    const handleEditClick = () => {
+        setEditing(!editing);
+    };
+
+    const handleConfirmClick = async () => {
+        try {
+            const response = await axios.post('http://localhost:5000/solve', { input_grid: inputBoard });
+            setSolvedBoard(response.data.solved_grid);
+            setSolved(true);
+            setEditing(false);
+        } catch (error) {
+            console.error('Error solving sudoku:', error);
+            alert('Failed to solve sudoku.');
         }
     };
 
@@ -46,30 +67,57 @@ const MainContent = () => {
                     <img src={image} alt="Sudoku Puzzle" className="w-full h-auto rounded-lg" />
                 </div>
             )}
-            {solved && (
-                <div className="mt-4">
-                    <h2 className="text-2xl font-semibold mb-4">Input Sudoku</h2>
-                    <div className="grid grid-cols-9 gap-1 mb-4">
-                        {inputBoard.map((row, rowIndex) => (
-                            row.map((cell, colIndex) => (
-                                <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
-                                    {cell || '.'}
-                                </div>
-                            ))
-                        ))}
-                    </div>
-                    <h2 className="text-2xl font-semibold mb-4">Solved Sudoku</h2>
-                    <div className="grid grid-cols-9 gap-1">
-                        {solvedBoard.map((row, rowIndex) => (
-                            row.map((cell, colIndex) => (
-                                <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
-                                    {cell}
-                                </div>
-                            ))
-                        ))}
-                    </div>
+            <div className="mt-4">
+                <h2 className="text-2xl font-semibold mb-4">Input Sudoku</h2>
+                <div className="grid grid-cols-9 gap-1 mb-4">
+                    {inputBoard.map((row, rowIndex) => (
+                        row.map((cell, colIndex) => (
+                            <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
+                                {editing ? (
+                                    <input
+                                        type="text"
+                                        value={cell || ''}
+                                        onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
+                                        className="w-full h-full text-center"
+                                    />
+                                ) : (
+                                    cell || '.'
+                                )}
+                            </div>
+                        ))
+                    ))}
                 </div>
-            )}
+                <div className="flex justify-between mt-4">
+                    <button
+                        onClick={handleEditClick}
+                        className="bg-blue-500 text-white py-2 px-4 rounded"
+                    >
+                        {editing ? 'Cancel' : 'Edit'}
+                    </button>
+                    {editing && (
+                        <button
+                            onClick={handleConfirmClick}
+                            className="bg-green-500 text-white py-2 px-4 rounded"
+                        >
+                            Confirm
+                        </button>
+                    )}
+                </div>
+                {solved && (
+                    <>
+                        <h2 className="text-2xl font-semibold mb-4 mt-4">Solved Sudoku</h2>
+                        <div className="grid grid-cols-9 gap-1">
+                            {solvedBoard.map((row, rowIndex) => (
+                                row.map((cell, colIndex) => (
+                                    <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8 flex items-center justify-center border border-gray-300">
+                                        {cell}
+                                    </div>
+                                ))
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
         </main>
     );
 };
