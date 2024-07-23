@@ -21,7 +21,7 @@ const MainContent = () => {
 
     const processImage = async (formData) => {
         try {
-            const response = await axios.post('http://localhost:5000/upload', formData, {
+            const response = await axios.post('https://sudomitra.onrender.com/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -48,7 +48,7 @@ const MainContent = () => {
 
     const handleConfirmClick = async () => {
         try {
-            const response = await axios.post('http://localhost:5000/solve', { input_grid: inputBoard });
+            const response = await axios.post('https://sudomitra.onrender.com/solve', { input_grid: inputBoard });
             if (response.data.solved_grid) {
                 setSolvedBoard(response.data.solved_grid);
                 setSolved(true);
