@@ -4,10 +4,10 @@ import easyocr
 import numpy as np
 from PIL import Image
 import io
-from sudoku_solver import solve_sudoku  # Import the Sudoku solver
+from sudoku_solver import solve_sudoku  # Make sure this module is available
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for simplicity
 
 # Initialize the EasyOCR reader
 reader = easyocr.Reader(['en'])
@@ -92,4 +92,4 @@ def solve_sudoku_endpoint():
         return jsonify({"error": "An error occurred while solving the Sudoku"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
